@@ -12,10 +12,12 @@ void time_init(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT       = 0;
     DWT->CTRL        |= DWT_CTRL_CYCCNTENA_Msk;
+
+    cycles_per_us = SystemCoreClock / 1000000U;
 }
 
 uint32_t micros(void)
 {
     /* SystemCoreClock is set by CubeMX startup; no HAL calls needed here */
-    return DWT->CYCCNT / (SystemCoreClock / 1000000U);
+    return DWT->CYCCNT / cycles_per_us;
 }
