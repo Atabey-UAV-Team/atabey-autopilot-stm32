@@ -3,13 +3,7 @@
 #include "../utils/math_utils.h"
 
 #include "stm32f4xx_hal.h"
-#include "tim.h"   /* CubeMX-generated; declares extern TIM_HandleTypeDef PWM_TIM_HANDLE */
-
-/*
- * Hardware PWM driven by a TIM peripheral configured for 1 µs ticks
- * (PSC = TIM_clk/1e6 - 1) and ARR = 19999 (50 Hz frame).
- * CCR value is directly the pulse width in µs.
- */
+#include "tim.h"   /* declares extern TIM_HandleTypeDef PWM_TIM_HANDLE */
 
 static inline uint32_t norm_to_us(float n)
 {

@@ -5,6 +5,6 @@
 
 void pwm_init(void);
 void pwm_write(const elevon_cmd_t *cmd);
-void pwm_failsafe(void);    /* drive both servos to neutral */
+void pwm_failsafe(void);
 
-#endif /* APP_PWM_PWM_H */
+#endif

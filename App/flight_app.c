@@ -8,17 +8,9 @@
 #include "control/control.h"
 #include "pwm/pwm.h"
 
-/*
- * The fast loop (imu_read -> ahrs_update -> control_update -> pwm_write)
- * runs as a single scheduled task at LOOP_HZ. It is intentionally NOT split
- * across multiple tasks: separating these stages would add latency and
- * jitter between sensing and actuation, which is what controllers hate
- * most.
- */
-
 static ahrs_state_t s_ahrs;
-static uint32_t     s_last_loop_us;
-static int          s_imu_ok;
+static uint32_t s_last_loop_us;
+static uint8_t s_imu_ok;
 
 /* Setpoints — for now, level flight. A future RC/RX module will write here. */
 static float s_roll_sp  = 0.0f;
@@ -51,22 +43,10 @@ static void fast_loop(void)
 
 void flight_app_init(void)
 {
-    time_init();
-    sched_init();
 
-    pwm_init();          /* outputs neutral immediately */
-    ahrs_init();
-    control_init();
-
-    s_imu_ok = (imu_init() == 0);
-
-    s_last_loop_us = micros();
-    sched_add_task("fast", LOOP_PERIOD_US, fast_loop);
 }
 
 void flight_app_run(void)
 {
-    for (;;) {
-        sched_run();
-    }
+
 }

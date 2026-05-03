@@ -1,13 +1,6 @@
 #include "time.h"
 #include "stm32f4xx.h"
 
-/*
- * DWT-based timing.
- * CYCCNT wraps at 2^32 cycles (~50 s @ 84 MHz). 32-bit µs subtraction is
- * still correct across one wrap, so consumers must compute deltas, not
- * compare absolute timestamps across long gaps.
- */
-
 static uint32_t s_cycles_per_us = 1U;
 
 void time_init(void)
@@ -31,3 +24,5 @@ uint32_t millis(void)
 {
     return micros() / 1000U;
 }
+
+// TODO: Kısa bir süreden sonra DWT-CYCCNT overflow oluyor. Fixlenecek
