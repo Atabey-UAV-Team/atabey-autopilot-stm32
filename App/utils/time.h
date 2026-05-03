@@ -5,5 +5,6 @@
 
 void     time_init(void);
 uint32_t micros(void);
+uint32_t millis(void);
 
 #endif /* APP_UTILS_TIME_H */
