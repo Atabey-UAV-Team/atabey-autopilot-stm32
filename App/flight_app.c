@@ -6,7 +6,7 @@
 #include "imu/imu.h"
 #include "ahrs/ahrs.h"
 #include "control/control.h"
-#include "pwm/pwm.h"
+#include "servo/servo.h"
 
 static ahrs_state_t s_ahrs;
 static uint32_t s_last_loop_us;

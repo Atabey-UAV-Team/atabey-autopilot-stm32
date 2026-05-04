@@ -45,4 +45,10 @@
 #define AHRS_Q_BIAS          0.003f
 #define AHRS_R_MEAS          0.030f
 
+/* ---- Receiver Input Channels ---- */
+#define ROLL_CH              TIM_CHANNEL_1
+#define PITCH_CH             TIM_CHANNEL_2
+#define THROTTLE_CH          TIM_CHANNEL_3
+#define YAW_CH               TIM_CHANNEL_4
+
 #endif /* APP_CONFIG_H */
