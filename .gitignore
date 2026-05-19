@@ -24,9 +24,6 @@ Release/
 # =========================
 # STM32CubeIDE specific
 # =========================
-.settings/
-.cproject
-.project
 .metadata/
 *.launch
 

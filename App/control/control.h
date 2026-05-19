@@ -1,23 +1,49 @@
-#ifndef APP_CONTROL_CONTROL_H
-#define APP_CONTROL_CONTROL_H
+#ifndef CONTROL_H
+#define CONTROL_H
 
-#include "../ahrs/ahrs.h"
+typedef struct
+{
+    float elevator;
+    float aileron;
+    float rudder;
+    float throttle;
+} ControlOutput;
 
-typedef struct {
-    float left;     /* normalized [-1, 1] */
-    float right;    /* normalized [-1, 1] */
-} elevon_cmd_t;
+typedef struct
+{
+    float Kp_theta;
+    float Ki_theta;
 
-void control_init(void);
-/* Single-step control update.
- *   ahrs:    current attitude estimate
- *   roll_sp, pitch_sp: setpoints in radians
- *   dt:      seconds since previous update
- *   out:     mixed elevon command */
-void control_update(const ahrs_state_t *ahrs,
-                    float roll_sp,
-					float pitch_sp,
-                    float dt,
-					elevon_cmd_t *out);
+    float Kp_phi;
+    float Ki_phi;
+
+    float Kq_eta;
+    float Kp_phi_xi;
+    float Ktheta_eta;
+
+    float int_theta;
+    float int_phi;
+
+    float elevator_min;
+    float elevator_max;
+
+    float aileron_min;
+    float aileron_max;
+
+    float rudder_trim;
+
+} AttitudeController;
+
+void init_controller(AttitudeController *ctrl);
+
+ControlOutput attitude_controller_update(
+    AttitudeController *ctrl,
+    float roll,
+    float pitch,
+    float roll_d,
+    float pitch_d,
+    float throttle_d,
+    float dt
+);
 
 #endif

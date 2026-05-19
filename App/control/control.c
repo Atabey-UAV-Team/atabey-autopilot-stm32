@@ -1,66 +1,112 @@
 #include "control.h"
-#include "../config.h"
+#include "config.h"
 #include "../utils/math_utils.h"
 
-typedef struct {
-    float kp, ki, kd;
-    float i_term;
-    float prev_meas;
-    float i_limit;
-    int   primed;        /* derivative needs one prior sample */
-} pid_t;
+#include <math.h>
 
-static pid_t roll_pid;
-static pid_t pitch_pid;
-
-static void pid_set(pid_t *p, float kp, float ki, float kd, float i_limit)
+static float saturate(float x, float min_val, float max_val)
 {
-    p->kp = kp; p->ki = ki; p->kd = kd;
-    p->i_term = 0.0f;
-    p->prev_meas = 0.0f;
-    p->i_limit = i_limit;
-    p->primed = 0;
+    if (x > max_val) return max_val;
+    if (x < min_val) return min_val;
+    return x;
 }
 
-/* Derivative-on-measurement to avoid setpoint-step kicks. */
-static float pid_step(pid_t *p, float setpoint, float meas, float dt)
+void init_controller(AttitudeController *ctrl)
 {
-    float err = setpoint - meas;
+    ctrl->Kp_theta = PID_ROLL_KP;
+    ctrl->Ki_theta = PID_ROLL_KI;
 
-    p->i_term += p->ki * err * dt;
-    p->i_term  = constrainf(p->i_term, -p->i_limit, p->i_limit);
+    ctrl->Kp_phi = PID_PITCH_KP;
+    ctrl->Ki_phi = PID_PITCH_KI;
 
-    float d = 0.0f;
-    if (p->primed && dt > 0.0f) {
-        d = -p->kd * (meas - p->prev_meas) / dt;
+    ctrl->Kq_eta = KQ_ETA;
+    ctrl->Kp_phi_xi = KP_PHI_XI;
+    ctrl->Ktheta_eta = KTHETA_ETA;
+
+    ctrl->int_theta = 0.0f;
+    ctrl->int_phi = 0.0f;
+
+    ctrl->elevator_min = -0.5f;
+    ctrl->elevator_max =  0.5f;
+
+    ctrl->aileron_min = -0.5f;
+    ctrl->aileron_max =  0.5f;
+
+    ctrl->rudder_trim = 0.0f;
+}
+
+ControlOutput attitude_controller_update(
+    AttitudeController *ctrl,
+    float roll,
+    float pitch,
+    float roll_d,
+    float pitch_d,
+    float throttle_d,
+    float dt
+)
+{
+    ControlOutput out;
+
+    float theta_error = pitch_d - pitch;
+
+    float elevator_unsat =
+        ctrl->Kp_theta * theta_error +
+        ctrl->Ki_theta * ctrl->int_theta;
+
+    float elevator_sat = saturate(
+        elevator_unsat,
+        ctrl->elevator_min,
+        ctrl->elevator_max
+    );
+
+    if ((elevator_unsat == elevator_sat) ||
+        (elevator_unsat > ctrl->elevator_max && theta_error < 0.0f) ||
+        (elevator_unsat < ctrl->elevator_min && theta_error > 0.0f))
+    {
+        ctrl->int_theta += theta_error * dt;
     }
-    p->prev_meas = meas;
-    p->primed = 1;
 
-    float u = p->kp * err + p->i_term + d;
-    return constrainf(u, -CONTROL_OUT_LIMIT, CONTROL_OUT_LIMIT);
-}
+    elevator_unsat =
+        ctrl->Kp_theta * theta_error +
+        ctrl->Ki_theta * ctrl->int_theta;
 
-void control_init(void)
-{
-    pid_set(&roll_pid,  PID_ROLL_KP,  PID_ROLL_KI,  PID_ROLL_KD,  PID_ROLL_I_LIMIT);
-    pid_set(&pitch_pid, PID_PITCH_KP, PID_PITCH_KI, PID_PITCH_KD, PID_PITCH_I_LIMIT);
-}
+    out.elevator = saturate(
+        elevator_unsat,
+        ctrl->elevator_min,
+        ctrl->elevator_max
+    );
 
-void control_update(const ahrs_state_t *ahrs,
-                    float roll_sp, float pitch_sp,
-                    float dt, elevon_cmd_t *out)
-{
-    float u_roll  = pid_step(&roll_pid,  roll_sp,  ahrs->roll,  dt);
-    float u_pitch = pid_step(&pitch_pid, pitch_sp, ahrs->pitch, dt);
+    float phi_error = roll_d - roll;
 
-    /* Elevon mixing for a flying wing.
-     * Right wing-down roll is positive; nose-up pitch is positive.
-     *   left  = pitch + roll
-     *   right = pitch - roll  */
-    float left  = u_pitch + u_roll;
-    float right = u_pitch - u_roll;
+    float aileron_unsat =
+        ctrl->Kp_phi * phi_error +
+        ctrl->Ki_phi * ctrl->int_phi;
 
-    out->left  = constrainf(left,  -ELEVON_LIMIT, ELEVON_LIMIT);
-    out->right = constrainf(right, -ELEVON_LIMIT, ELEVON_LIMIT);
+    float aileron_sat = saturate(
+        aileron_unsat,
+        ctrl->aileron_min,
+        ctrl->aileron_max
+    );
+
+    if ((aileron_unsat == aileron_sat) ||
+        (aileron_unsat > ctrl->aileron_max && phi_error < 0.0f) ||
+        (aileron_unsat < ctrl->aileron_min && phi_error > 0.0f))
+    {
+        ctrl->int_phi += phi_error * dt;
+    }
+
+    aileron_unsat =
+        ctrl->Kp_phi * phi_error +
+        ctrl->Ki_phi * ctrl->int_phi;
+
+    out.aileron = saturate(
+        aileron_unsat,
+        ctrl->aileron_min,
+        ctrl->aileron_max
+    );
+
+    out.rudder = ctrl->rudder_trim;
+    out.throttle = throttle_d;
+
+    return out;
 }

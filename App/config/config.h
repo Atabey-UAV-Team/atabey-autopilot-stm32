@@ -27,14 +27,15 @@
 
 /* ---- PID gains (start conservative; tune in flight) ---- */
 #define PID_ROLL_KP          0.80f
-#define PID_ROLL_KI          0.10f
+#define PID_ROLL_KI          0.02f
 #define PID_ROLL_KD          0.04f
-#define PID_ROLL_I_LIMIT     0.30f
 
 #define PID_PITCH_KP         0.90f
-#define PID_PITCH_KI         0.12f
-#define PID_PITCH_KD         0.05f
-#define PID_PITCH_I_LIMIT    0.30f
+#define PID_PITCH_KI         0.02f
+#define KQ_ETA               -0.28f
+#define KP_PHI_XI            -0.2f
+#define KTHETA_ETA           -1.0f
+
 
 /* ---- Output limits ---- */
 #define ELEVON_LIMIT         0.85f               /* max normalized elevon */
@@ -44,5 +45,20 @@
 #define AHRS_Q_ANGLE         0.001f
 #define AHRS_Q_BIAS          0.003f
 #define AHRS_R_MEAS          0.030f
+
+/* ---- AHRS (Complementary) ---- */
+#define AHRS_ALPHA           0.95f
+
+/* ---- Receiver Input Channels ---- */
+#define RC_CHANNEL_COUNT     4
+#define ROLL_CH              TIM_CHANNEL_1
+#define PITCH_CH             TIM_CHANNEL_2
+#define THROTTLE_CH          TIM_CHANNEL_3
+#define YAW_CH               TIM_CHANNEL_4
+#define RC_US_MIN            1000U
+#define RC_US_MID            1500U
+#define RC_US_MAX            2000U
+#define RC_VALID_MIN         900U
+#define RC_VALID_MAX         2100U
 
 #endif /* APP_CONFIG_H */
